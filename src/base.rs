@@ -42,6 +42,8 @@ use x11::xlib;
 use libc::{self, c_int, c_char, c_void};
 use std::option::Option;
 
+use std::fmt;
+use std::error;
 use std::mem;
 use std::ptr::null;
 use std::marker::PhantomData;
@@ -262,6 +264,36 @@ pub enum ConnError {
     ClosedInvalidScreen,
     /// Connection closed because some FD passing operation failed
     ClosedFdPassingFailed,
+}
+
+impl ConnError {
+    fn as_str(&self) -> &'static str {
+        match *self {
+            ConnError::Connection => "Xcb connection failed because of a socket, pipe or other stream error",
+            ConnError::ClosedExtNotSupported => "Xcb connection shutdown because of an unsupported extension",
+            ConnError::ClosedMemInsufficient => "Xcb connection closed because of insufficient memory",
+            ConnError::ClosedReqLenExceed => "Xcb connection closed because of a request exceeding the acceptable length",
+            ConnError::ClosedParseErr => "Xcb connection closed because of a display string parse error",
+            ConnError::ClosedInvalidScreen => "Xcb connection closed because there is no matching screen for the display",
+            ConnError::ClosedFdPassingFailed => "Xcb connection closed because of a FD operation failure"
+        }
+    }
+}
+
+impl fmt::Display for ConnError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl error::Error for ConnError {
+    fn description(&self) -> &str {
+        self.as_str()
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        None
+    }
 }
 
 pub type ConnResult<T> = Result<T, ConnError>;
